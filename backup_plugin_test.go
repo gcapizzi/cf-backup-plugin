@@ -30,7 +30,7 @@ var _ = Describe("BackupPlugin", func() {
 				cliConnection := new(fakes.FakeCliConnection)
 				cliConnection.CliCommandReturnsOnCall(1, []string{"...", "Status: update in progress", "..."}, nil)
 				cliConnection.CliCommandReturnsOnCall(2, []string{"...", "Status: update in progress", "..."}, nil)
-				cliConnection.CliCommandReturnsOnCall(3, []string{"...", "Status: update succeeded", "Message: some message", "..."}, nil)
+				cliConnection.CliCommandReturnsOnCall(3, []string{"...", "Status: update succeeded", "Message: some message\nwith\nnewlines", "..."}, nil)
 
 				go func() {
 					backupPlugin.Run(cliConnection, []string{"backup-service", "service-name"})
@@ -40,7 +40,7 @@ var _ = Describe("BackupPlugin", func() {
 
 				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"update-service", "service-name", "-c", `{"backup-action": "backup"}`}))
 
-				Expect(string(output)).To(Equal("some message\n"))
+				Expect(string(output)).To(Equal("some message\nwith\nnewlines\n"))
 			})
 		})
 	})
