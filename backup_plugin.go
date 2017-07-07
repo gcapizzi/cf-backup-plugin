@@ -27,8 +27,13 @@ func (c *BackupPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	command := args[0]
 	action := actions[command]
 
+	paramsJson := `{"action": "` + action + `"}`
+	if action == "restore" {
+		paramsJson = `{"action": "restore", "backup_id": "` + args[2] + `"}`
+	}
+
 	fmt.Fprint(c.Output, "Running "+command)
-	cliConnection.CliCommandWithoutTerminalOutput("update-service", serviceName, "-c", `{"action": "`+action+`"}`)
+	cliConnection.CliCommandWithoutTerminalOutput("update-service", serviceName, "-c", paramsJson)
 
 	for {
 		fmt.Fprint(c.Output, ".")
