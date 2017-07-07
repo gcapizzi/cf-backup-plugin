@@ -24,14 +24,18 @@ var actions = map[string]string{
 
 func (c *BackupPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	serviceName := args[1]
-	action := actions[args[0]]
+	command := args[0]
+	action := actions[command]
 
-	cliConnection.CliCommand("update-service", serviceName, "-c", `{"backup-action": "`+action+`"}`)
+	fmt.Fprint(c.Output, "Running "+command)
+	cliConnection.CliCommandWithoutTerminalOutput("update-service", serviceName, "-c", `{"action": "`+action+`"}`)
 
 	for {
-		serviceInfoOutput, _ := cliConnection.CliCommand("service", serviceName)
+		fmt.Fprint(c.Output, ".")
+		serviceInfoOutput, _ := cliConnection.CliCommandWithoutTerminalOutput("service", serviceName)
 		if anyLineContains(serviceInfoOutput, "Status: update succeeded") {
 			message := extractMessageFrom(serviceInfoOutput)
+			fmt.Fprintln(c.Output)
 			fmt.Fprintln(c.Output, message)
 			return
 		}

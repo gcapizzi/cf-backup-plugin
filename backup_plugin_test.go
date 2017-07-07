@@ -26,9 +26,9 @@ var _ = Describe("BackupPlugin", func() {
 	DescribeTable("Run",
 		func(command, action string) {
 			cliConnection := new(fakes.FakeCliConnection)
-			cliConnection.CliCommandReturnsOnCall(1, []string{"...", "Status: update in progress", "Message: ", "..."}, nil)
-			cliConnection.CliCommandReturnsOnCall(2, []string{"...", "Status: update in progress", "Message: ", "..."}, nil)
-			cliConnection.CliCommandReturnsOnCall(3, []string{"...", "Status: update succeeded", "Message: some message\nwith\nnewlines", "..."}, nil)
+			cliConnection.CliCommandWithoutTerminalOutputReturnsOnCall(1, []string{"...", "Status: update in progress", "Message: ", "..."}, nil)
+			cliConnection.CliCommandWithoutTerminalOutputReturnsOnCall(2, []string{"...", "Status: update in progress", "Message: ", "..."}, nil)
+			cliConnection.CliCommandWithoutTerminalOutputReturnsOnCall(3, []string{"...", "Status: update succeeded", "Message: some message\nwith\nnewlines", "..."}, nil)
 
 			go func() {
 				backupPlugin.Run(cliConnection, []string{command, "service-name"})
@@ -36,13 +36,18 @@ var _ = Describe("BackupPlugin", func() {
 			}()
 			output, _ := ioutil.ReadAll(reader)
 
-			Expect(cliConnection.CliCommandCallCount()).To(Equal(4))
-			Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"update-service", "service-name", "-c", `{"backup-action": "` + action + `"}`}))
+			Expect(cliConnection.CliCommandWithoutTerminalOutputCallCount()).To(Equal(4))
+			Expect(cliConnection.CliCommandWithoutTerminalOutputArgsForCall(0)).To(Equal([]string{"update-service", "service-name", "-c", `{"action": "` + action + `"}`}))
 
-			Expect(string(output)).To(Equal("some message\nwith\nnewlines\n"))
+			Expect(string(output)).To(Equal("Running " + command + "...\nsome message\nwith\nnewlines\n"))
 		},
 		Entry("backup-service", "backup-service", "backup"),
 		Entry("restore-service", "restore-service", "restore"),
 		Entry("list-service-backups", "list-service-backups", "list"),
 	)
+
+	// error in running update-service
+	// error in running service
+	// update-service never completing successfully
+	// error in parsing the output
 })
