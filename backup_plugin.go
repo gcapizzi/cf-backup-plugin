@@ -17,14 +17,26 @@ type BackupPlugin struct {
 }
 
 func (c *BackupPlugin) Run(cliConnection plugin.CliConnection, args []string) {
+	command := args[0]
 	serviceName := args[1]
 
-	cliConnection.CliCommand("update-service", serviceName, "-c", `{"backup-action": "backup"}`)
+	var action string
+	switch command {
+	case "backup-service":
+		action = "backup"
+	case "restore-service":
+		action = "restore"
+	case "list-service-backups":
+		action = "list"
+	}
+
+	cliConnection.CliCommand("update-service", serviceName, "-c", `{"backup-action": "`+action+`"}`)
 
 	for {
 		serviceInfoOutput, _ := cliConnection.CliCommand("service", serviceName)
 		if anyLineContains(serviceInfoOutput, "Status: update succeeded") {
-			fmt.Fprintln(c.Output, extractMessageFrom(serviceInfoOutput))
+			message := extractMessageFrom(serviceInfoOutput)
+			fmt.Fprintln(c.Output, message)
 			return
 		}
 	}
@@ -67,6 +79,20 @@ func (c *BackupPlugin) GetMetadata() plugin.PluginMetadata {
 				HelpText: "Backup a service",
 				UsageDetails: plugin.Usage{
 					Usage: "backup-service\n   cf backup-service [service-name]",
+				},
+			},
+			{
+				Name:     "restore-service",
+				HelpText: "Restore a service",
+				UsageDetails: plugin.Usage{
+					Usage: "restore-service\n   cf restore-service [service-name]",
+				},
+			},
+			{
+				Name:     "list-service-backups",
+				HelpText: "List all backups for a service",
+				UsageDetails: plugin.Usage{
+					Usage: "list-service-backups\n   cf list-service-backups [service-name]",
 				},
 			},
 		},

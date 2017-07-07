@@ -9,12 +9,19 @@ import (
 
 	"code.cloudfoundry.org/backup-plugin/fakes"
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("BackupPlugin", func() {
-	var reader, writer = io.Pipe()
-	var backupPlugin = BackupPlugin{Output: writer}
+	var reader *io.PipeReader
+	var writer *io.PipeWriter
+	var backupPlugin BackupPlugin
+
+	BeforeEach(func() {
+		reader, writer = io.Pipe()
+		backupPlugin = BackupPlugin{Output: writer}
+	})
 
 	Describe("GetMetadata", func() {
 		It("Returns a PluginMetadata struct", func() {
@@ -24,24 +31,26 @@ var _ = Describe("BackupPlugin", func() {
 		})
 	})
 
-	Describe("Run", func() {
-		Describe("backup-service", func() {
-			It("Sends a backup command to the service through the update-service CLI command", func() {
-				cliConnection := new(fakes.FakeCliConnection)
-				cliConnection.CliCommandReturnsOnCall(1, []string{"...", "Status: update in progress", "..."}, nil)
-				cliConnection.CliCommandReturnsOnCall(2, []string{"...", "Status: update in progress", "..."}, nil)
-				cliConnection.CliCommandReturnsOnCall(3, []string{"...", "Status: update succeeded", "Message: some message\nwith\nnewlines", "..."}, nil)
+	DescribeTable("Run",
+		func(command, action string) {
+			cliConnection := new(fakes.FakeCliConnection)
+			cliConnection.CliCommandReturnsOnCall(1, []string{"...", "Status: update in progress", "..."}, nil)
+			cliConnection.CliCommandReturnsOnCall(2, []string{"...", "Status: update in progress", "..."}, nil)
+			cliConnection.CliCommandReturnsOnCall(3, []string{"...", "Status: update succeeded", "Message: some message\nwith\nnewlines", "..."}, nil)
 
-				go func() {
-					backupPlugin.Run(cliConnection, []string{"backup-service", "service-name"})
-					writer.Close()
-				}()
-				output, _ := ioutil.ReadAll(reader)
+			go func() {
+				backupPlugin.Run(cliConnection, []string{command, "service-name"})
+				writer.Close()
+			}()
+			output, _ := ioutil.ReadAll(reader)
 
-				Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"update-service", "service-name", "-c", `{"backup-action": "backup"}`}))
+			Expect(cliConnection.CliCommandCallCount()).To(Equal(4))
+			Expect(cliConnection.CliCommandArgsForCall(0)).To(Equal([]string{"update-service", "service-name", "-c", `{"backup-action": "` + action + `"}`}))
 
-				Expect(string(output)).To(Equal("some message\nwith\nnewlines\n"))
-			})
-		})
-	})
+			Expect(string(output)).To(Equal("some message\nwith\nnewlines\n"))
+		},
+		Entry("backup-service", "backup-service", "backup"),
+		Entry("restore-service", "restore-service", "restore"),
+		Entry("list-service-backups", "list-service-backups", "list"),
+	)
 })
