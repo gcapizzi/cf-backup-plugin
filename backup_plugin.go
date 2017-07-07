@@ -16,19 +16,15 @@ type BackupPlugin struct {
 	Output io.Writer
 }
 
-func (c *BackupPlugin) Run(cliConnection plugin.CliConnection, args []string) {
-	command := args[0]
-	serviceName := args[1]
+var actions = map[string]string{
+	"backup-service":       "backup",
+	"restore-service":      "restore",
+	"list-service-backups": "list",
+}
 
-	var action string
-	switch command {
-	case "backup-service":
-		action = "backup"
-	case "restore-service":
-		action = "restore"
-	case "list-service-backups":
-		action = "list"
-	}
+func (c *BackupPlugin) Run(cliConnection plugin.CliConnection, args []string) {
+	serviceName := args[1]
+	action := actions[args[0]]
 
 	cliConnection.CliCommand("update-service", serviceName, "-c", `{"backup-action": "`+action+`"}`)
 
