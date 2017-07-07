@@ -26,8 +26,8 @@ var _ = Describe("BackupPlugin", func() {
 	DescribeTable("Run",
 		func(command, action string) {
 			cliConnection := new(fakes.FakeCliConnection)
-			cliConnection.CliCommandReturnsOnCall(1, []string{"...", "Status: update in progress", "..."}, nil)
-			cliConnection.CliCommandReturnsOnCall(2, []string{"...", "Status: update in progress", "..."}, nil)
+			cliConnection.CliCommandReturnsOnCall(1, []string{"...", "Status: update in progress", "Message: ", "..."}, nil)
+			cliConnection.CliCommandReturnsOnCall(2, []string{"...", "Status: update in progress", "Message: ", "..."}, nil)
 			cliConnection.CliCommandReturnsOnCall(3, []string{"...", "Status: update succeeded", "Message: some message\nwith\nnewlines", "..."}, nil)
 
 			go func() {

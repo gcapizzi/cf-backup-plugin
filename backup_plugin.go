@@ -40,7 +40,7 @@ func (c *BackupPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 
 func anyLineContains(lines []string, substring string) bool {
 	for _, line := range lines {
-		if strings.Contains(line, "Message:") {
+		if strings.Contains(line, substring) {
 			return true
 		}
 	}
