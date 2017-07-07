@@ -23,14 +23,6 @@ var _ = Describe("BackupPlugin", func() {
 		backupPlugin = BackupPlugin{Output: writer}
 	})
 
-	Describe("GetMetadata", func() {
-		It("Returns a PluginMetadata struct", func() {
-			metadata := backupPlugin.GetMetadata()
-
-			Expect(metadata.Name).To(Equal("BackupPlugin"))
-		})
-	})
-
 	DescribeTable("Run",
 		func(command, action string) {
 			cliConnection := new(fakes.FakeCliConnection)
